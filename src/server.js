@@ -26,11 +26,18 @@ app.get("/track", async (req, res) => {
     "base64"
   );
 
-  await MailTracking.create({
-    emailId: emailId || "unknown",
-    openedAt: new Date(),
-    userAgent: req.headers["user-agent"],
-  });
+  const existingTracking = await MailTracking.findOne({ emailId });
+  if (existingTracking) {
+    // Increment open count if already exists
+    existingTracking.openMailCount += 1;
+    await existingTracking.save();
+  } else {
+    // Create new tracking record if it doesn't exist
+    await MailTracking.create({
+      emailId: emailId || "unknown",
+      userAgent: req.headers["user-agent"],
+    });
+  }
 
   res.set("Content-Type", "image/gif");
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
